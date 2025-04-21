@@ -1,0 +1,69 @@
+# Model configuration
+model_type: "dynunet"  # Options: unet, basicunet, dynunet
+in_channels: 1
+out_channels: 2  # Background + Foreground (colon cancer)
+dimensions: 3  # 3D segmentation
+
+# Data configuration
+data_dir: "/path/to/Task10_Colon"  # Update this path to your dataset location
+validation_split: 0.2  # 20% of training data used for validation
+intensity_bounds: [-175, 250]  # HU range for CT images
+
+# Patch sampling configuration
+patch_size: [96, 96, 96]  # Size of patches for training
+pos_sample_ratio: 0.7  # Ratio of positive (tumor) patches to sample
+
+# Training parameters
+batch_size: 2
+val_batch_size: 1
+max_epochs: 1000
+early_stopping_patience: 50
+num_workers: 4
+
+# Optimizer settings
+optimizer:
+  type: "adamw"  # Options: adam, adamw, sgd
+  lr: 3.0e-4
+  weight_decay: 1.0e-5
+
+# Learning rate scheduler
+scheduler:
+  mode: "min"  # Reduce LR when validation loss plateaus
+  factor: 0.5   # Multiply LR by this factor when plateauing
+  patience: 20  # Number of epochs with no improvement before reducing LR
+  verbose: true
+
+# Loss function
+loss:
+  include_background: false
+  to_onehot_y: true
+  softmax: true
+  sigmoid: false
+  use_ce: true  # If true, use combined Dice + Cross-Entropy loss
+
+# Evaluation metric
+metric:
+  include_background: false
+  reduction: "mean"
+
+# Inference settings
+sw_batch_size: 4  # Batch size for sliding window inference
+overlap: 0.5  # Overlap for sliding window
+
+# Logging and checkpoints
+checkpoint_interval: 50  # Save checkpoint every N epochs
+val_interval: 10  # Validate every N epochs
+vis_interval: 10  # Visualize predictions every N epochs
+plot_interval: 10  # Plot training curves every N epochs
+
+# Output directory
+output_dir: "./outputs"
+
+# Device settings
+device: "cuda"  # Options: cuda, cuda:0, cpu
+
+# Random seed for reproducibility
+seed: 42
+
+# Resuming training
+resume: false  # Whether to resume from a checkpoint

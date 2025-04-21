@@ -1,0 +1,35 @@
+# Model configuration
+model_type: "dynunet"  # Options: unet, basicunet, dynunet
+model_path: "./outputs/dynunet_YYYYMMDD_HHMMSS/checkpoints/best_model_dynunet.pth"  # Update with your model path
+in_channels: 1
+out_channels: 2  # Background + Foreground (colon cancer)
+dimensions: 3  # 3D segmentation
+
+# Data configuration
+data_dir: "/path/to/Task10_Colon"  # Update this path to your dataset location
+intensity_bounds: [-175, 250]  # HU range for CT images
+
+# Inference settings
+roi_size: [96, 96, 96]  # Size of sliding window patches
+sw_batch_size: 4  # Batch size for sliding window inference
+overlap: 0.5  # Overlap between sliding windows
+num_workers: 4  # Number of worker processes for data loading
+
+# Test-time augmentation
+use_tta: true  # Whether to use test-time augmentation
+
+# Post-processing
+apply_post_processing: true
+min_tumor_size_mm3: 50  # Remove small isolated predictions (50 mm³)
+
+# Visualization settings
+num_visualizations: 10  # Number of cases to visualize
+num_error_visualizations: 5  # Number of cases for error analysis visualization
+montage_slices: 9  # Number of slices to show in montage visualizations
+
+# Output directory
+output_dir: "./results/inference"
+
+# Device settings
+device: "cuda"  # Options: cuda, cuda:0, cpu
+
