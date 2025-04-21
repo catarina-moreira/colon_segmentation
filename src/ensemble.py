@@ -167,7 +167,7 @@ def run_ensemble_inference(ensemble_model, test_loader, config, predictions_dir,
             if config["use_tta"]:
                 # Use test-time augmentation
                 outputs = predict_with_tta(
-                    model=model,
+                    model=ensemble_model,
                     image=inputs,
                     roi_size=config["roi_size"],
                     sw_batch_size=config["sw_batch_size"],

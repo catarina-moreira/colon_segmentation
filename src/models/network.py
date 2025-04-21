@@ -4,6 +4,9 @@ import monai
 from monai.networks.nets import UNet, BasicUNet, DynUNet
 from monai.networks.layers import Norm
 
+import inspect
+print(inspect.signature(monai.networks.nets.DynUNet.__init__))
+
 class ModelFactory:
     """Factory class for creating segmentation models."""
     
@@ -38,7 +41,7 @@ class UNetModel(nn.Module):
         super().__init__()
         
         self.net = UNet(
-            dimensions=dimensions,
+            spatial_dims=dimensions,
             in_channels=in_channels,
             out_channels=out_channels,
             channels=(16, 32, 64, 128, 256),
@@ -46,10 +49,10 @@ class UNetModel(nn.Module):
             num_res_units=2,
             norm=Norm.BATCH,
         )
+       
     
     def forward(self, x):
         return self.net(x)
-
 
 class BasicUNetModel(nn.Module):
     """MONAI's lightweight UNet model."""
@@ -57,12 +60,21 @@ class BasicUNetModel(nn.Module):
     def __init__(self, in_channels=1, out_channels=2, dimensions=3):
         super().__init__()
         
-        self.net = BasicUNet(
-            dimensions=dimensions,
-            in_channels=in_channels,
-            out_channels=out_channels,
-            features=(32, 64, 128, 256, 512),
-        )
+        # Check if we should use spatial_dims instead of dimensions
+        if hasattr(monai.networks.nets.BasicUNet, "__version__") and monai.networks.nets.BasicUNet.__version__ >= "0.6.0":
+            self.net = BasicUNet(
+                spatial_dims=dimensions,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                features=(32, 64, 128, 256, 512),
+            )
+        else:
+            self.net = BasicUNet(
+                dimensions=dimensions,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                features=(32, 64, 128, 256, 512),
+            )
     
     def forward(self, x):
         return self.net(x)
@@ -81,17 +93,31 @@ class DynUNetModel(nn.Module):
         strides = [[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
         upsample_kernel_size = [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
         
-        self.net = DynUNet(
-            spatial_dims=dimensions,
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=kernel_size,
-            strides=strides,
-            upsample_kernel_size=upsample_kernel_size,
-            norm_name="instance",
-            deep_supervision=True,
-            res_block=True,
-        )
+        # Check if we should use spatial_dims instead of dimensions
+        if hasattr(monai.networks.nets.DynUNet, "__version__") and monai.networks.nets.DynUNet.__version__ >= "0.6.0":
+            self.net = DynUNet(
+                spatial_dims=dimensions,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                strides=strides,
+                upsample_kernel_size=upsample_kernel_size,
+                norm_name="instance",
+                deep_supervision=True,
+                res_block=True,
+            )
+        else:
+            self.net = DynUNet(
+                dimensions=dimensions,
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                strides=strides,
+                upsample_kernel_size=upsample_kernel_size,
+                norm_name="instance",
+                deep_supervision=True,
+                res_block=True,
+            )
     
     def forward(self, x):
         return self.net(x)

@@ -9,7 +9,7 @@ import monai
 from monai.transforms import (
     Compose,
     LoadImaged,
-    AddChanneld,
+    EnsureChannelFirstd,
     ScaleIntensityRanged,
     CropForegroundd,
     RandCropByPosNegLabeld,
@@ -162,7 +162,7 @@ def get_transforms(
     # Common transforms for all phases
     common_transforms = [
         LoadImaged(keys=["image", "label"] if phase != "test" else ["image"]),
-        AddChanneld(keys=["image", "label"] if phase != "test" else ["image"]),
+        EnsureChannelFirstd(keys=["image", "label"] if phase != "test" else ["image"]),
         Orientationd(
             keys=["image", "label"] if phase != "test" else ["image"], 
             axcodes="RAS"
