@@ -196,7 +196,7 @@ def predict_with_sliding_window(model, image, roi_size, sw_batch_size=4, overlap
     
     return prediction
 
-def predict_with_tta(model, image, roi_size, sw_batch_size=4, overlap=0.5, mode="gaussian"):
+def predict_with_tta(model, image, roi_size, sw_batch_size=4, overlap=0.5, mode="gaussian", memory_efficient=False):
     """
     Run inference with test-time augmentation (TTA).
     
@@ -207,6 +207,7 @@ def predict_with_tta(model, image, roi_size, sw_batch_size=4, overlap=0.5, mode=
         sw_batch_size: Batch size for sliding window
         overlap: Amount of overlap between windows
         mode: Blending mode for overlapping windows
+        memory_efficient: If True, uses a memory-efficient approach by processing one augmentation at a time
         
     Returns:
         Prediction tensor after test-time augmentation
@@ -217,25 +218,60 @@ def predict_with_tta(model, image, roi_size, sw_batch_size=4, overlap=0.5, mode=
         # Original prediction
         pred_orig = predict_with_sliding_window(model, image, roi_size, sw_batch_size, overlap, mode)
         
-        # Flip along depth (z-axis)
-        image_z = torch.flip(image, dims=[2])
-        pred_z = predict_with_sliding_window(model, image_z, roi_size, sw_batch_size, overlap, mode)
-        pred_z = torch.flip(pred_z, dims=[2])
-        
-        # Flip along height (y-axis)
-        image_y = torch.flip(image, dims=[3])
-        pred_y = predict_with_sliding_window(model, image_y, roi_size, sw_batch_size, overlap, mode)
-        pred_y = torch.flip(pred_y, dims=[3])
-        
-        # Flip along width (x-axis)
-        image_x = torch.flip(image, dims=[4])
-        pred_x = predict_with_sliding_window(model, image_x, roi_size, sw_batch_size, overlap, mode)
-        pred_x = torch.flip(pred_x, dims=[4])
-        
-        # Average predictions
-        prediction = torch.stack([pred_orig, pred_z, pred_y, pred_x]).mean(dim=0)
+        if memory_efficient:
+            # Memory-efficient version: accumulate running sum and count
+            prediction_sum = pred_orig.clone()
+            count = 1
+            
+            # Flip along depth (z-axis)
+            image_z = torch.flip(image, dims=[2])
+            pred_z = predict_with_sliding_window(model, image_z, roi_size, sw_batch_size, overlap, mode)
+            pred_z = torch.flip(pred_z, dims=[2])
+            prediction_sum += pred_z
+            count += 1
+            del pred_z, image_z  # Free memory
+            
+            # Flip along height (y-axis)
+            image_y = torch.flip(image, dims=[3])
+            pred_y = predict_with_sliding_window(model, image_y, roi_size, sw_batch_size, overlap, mode)
+            pred_y = torch.flip(pred_y, dims=[3])
+            prediction_sum += pred_y
+            count += 1
+            del pred_y, image_y  # Free memory
+            
+            # Flip along width (x-axis)
+            image_x = torch.flip(image, dims=[4])
+            pred_x = predict_with_sliding_window(model, image_x, roi_size, sw_batch_size, overlap, mode)
+            pred_x = torch.flip(pred_x, dims=[4])
+            prediction_sum += pred_x
+            count += 1
+            del pred_x, image_x  # Free memory
+            
+            # Average predictions
+            prediction = prediction_sum / count
+        else:
+            # Standard version: stack all predictions
+            # Flip along depth (z-axis)
+            image_z = torch.flip(image, dims=[2])
+            pred_z = predict_with_sliding_window(model, image_z, roi_size, sw_batch_size, overlap, mode)
+            pred_z = torch.flip(pred_z, dims=[2])
+            
+            # Flip along height (y-axis)
+            image_y = torch.flip(image, dims=[3])
+            pred_y = predict_with_sliding_window(model, image_y, roi_size, sw_batch_size, overlap, mode)
+            pred_y = torch.flip(pred_y, dims=[3])
+            
+            # Flip along width (x-axis)
+            image_x = torch.flip(image, dims=[4])
+            pred_x = predict_with_sliding_window(model, image_x, roi_size, sw_batch_size, overlap, mode)
+            pred_x = torch.flip(pred_x, dims=[4])
+            
+            # Average predictions
+            prediction = torch.stack([pred_orig, pred_z, pred_y, pred_x]).mean(dim=0)
         
     return prediction
+
+
 
 def create_evaluation_metric(include_background=False, reduction="mean"):
     """

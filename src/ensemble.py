@@ -15,6 +15,8 @@ from utils.model_utils import predict_with_sliding_window, predict_with_tta
 from utils.visualization import visualize_slice, save_visualization
 from models.network import create_ensemble, load_trained_model
 
+from monai.metrics import SurfaceDistanceMetric
+
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Ensemble inference for colon cancer segmentation")
@@ -165,11 +167,12 @@ def run_ensemble_inference(ensemble_model, test_loader, config, predictions_dir,
             if config["use_tta"]:
                 # Use test-time augmentation
                 outputs = predict_with_tta(
-                    model=ensemble_model,
-                    image=test_inputs,
+                    model=model,
+                    image=inputs,
                     roi_size=config["roi_size"],
                     sw_batch_size=config["sw_batch_size"],
-                    overlap=config["overlap"]
+                    overlap=config["overlap"],
+                    memory_efficient=config.get("memory_efficient_tta", False)
                 )
             else:
                 # Standard sliding window inference
@@ -229,10 +232,10 @@ def run_ensemble_inference(ensemble_model, test_loader, config, predictions_dir,
                     include_background=False, percentile=95
                 ).cpu().numpy()[0][0]
                 
-                surface_dist_val = compute_average_surface_distance(
-                    y_pred=pred_tensor, y=label,
-                    include_background=False
-                ).cpu().numpy()[0][0]
+                surface_metric = SurfaceDistanceMetric(include_background=False, reduction="mean")
+                surface_metric(y_pred=pred_tensor, y=label)
+                surface_dist_val = surface_metric.aggregate().item()
+                surface_metric.reset()
                 
                 all_metrics["hausdorff"].append(hausdorff_val)
                 all_metrics["surface_distance"].append(surface_dist_val)

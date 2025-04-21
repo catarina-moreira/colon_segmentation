@@ -32,3 +32,7 @@ output_dir: "./results/inference"
 
 # Device settings
 device: "cuda"  # Options: cuda, cuda:0, cpu
+
+# Test-time augmentation
+use_tta: true  # Whether to use test-time augmentation
+memory_efficient_tta: false  # Use memory-efficient TTA approach

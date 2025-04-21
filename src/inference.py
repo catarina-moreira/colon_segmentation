@@ -122,7 +122,8 @@ def run_inference(model, test_loader, config, output_dirs):
                     image=inputs,
                     roi_size=config["roi_size"],
                     sw_batch_size=config["sw_batch_size"],
-                    overlap=config["overlap"]
+                    overlap=config["overlap"],
+                    memory_efficient=config.get("memory_efficient_tta", False)
                 )
             else:
                 outputs = predict_with_sliding_window(
@@ -221,7 +222,7 @@ def run_inference(model, test_loader, config, output_dirs):
                 fig = visualize_slice(
                     image=inputs[0].cpu().numpy(),
                     prediction=prediction[0],
-                    ground_truth=label[0].cpu().numpy() if has_labels else None,
+                    ground_truth=label[0].cpu().numpy() if has_labels else None,  # Add conditional check
                     slice_idx=None,
                     axis=0,
                     figsize=(15, 5) if has_labels else (10, 5)

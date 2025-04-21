@@ -161,25 +161,20 @@ def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_trained_model(model_type, checkpoint_path, in_channels=1, out_channels=2, dimensions=3, device=None):
-    """
-    Load a trained model from a checkpoint.
-    
-    Args:
-        model_type: Type of model to load
-        checkpoint_path: Path to the model checkpoint
-        in_channels: Number of input channels
-        out_channels: Number of output channels
-        dimensions: Number of spatial dimensions
-        device: Computation device (if None, will use get_device())
-    
-    Returns:
-        Loaded model on the specified device
-    """
     if device is None:
         device = get_device()
     
     model = ModelFactory.create_model(model_type, in_channels, out_channels, dimensions)
-    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+    
+    # Load checkpoint and handle both direct state_dict and nested dictionary
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        # Handle checkpoint saved with save_model function
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        # Handle direct state_dict
+        model.load_state_dict(checkpoint)
+    
     model = model.to(device)
     model.eval()
     

@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import nibabel as nib
 import monai
+
 from monai.transforms import (
     Compose,
     LoadImaged,
@@ -54,19 +55,42 @@ def prepare_datalist(data_dir, validation_split=0.2, test=False, seed=42):
     # Set random seed for reproducibility
     random.seed(seed)
     
+    # Check if data directory exists
+    if not os.path.exists(data_dir):
+        raise FileNotFoundError(f"Data directory not found: {data_dir}")
+    
     if not test:
-        # Get all training images and labels
-        train_images = sorted([
-            os.path.join(data_dir, "imagesTr", f) 
-            for f in os.listdir(os.path.join(data_dir, "imagesTr"))
-            if f.endswith('.nii.gz')
-        ])
+        # Get training directory path
+        train_img_dir = os.path.join(data_dir, "imagesTr")
+        train_lbl_dir = os.path.join(data_dir, "labelsTr")
         
-        train_labels = sorted([
-            os.path.join(data_dir, "labelsTr", f) 
-            for f in os.listdir(os.path.join(data_dir, "labelsTr"))
-            if f.endswith('.nii.gz')
-        ])
+        # Check if directories exist
+        if not os.path.exists(train_img_dir):
+            raise FileNotFoundError(f"Training images directory not found: {train_img_dir}")
+        if not os.path.exists(train_lbl_dir):
+            raise FileNotFoundError(f"Training labels directory not found: {train_lbl_dir}")
+        
+        # Get all training images and labels with error handling
+        try:
+            train_images = sorted([
+                os.path.join(train_img_dir, f) 
+                for f in os.listdir(train_img_dir)
+                if f.endswith('.nii.gz')
+            ])
+            
+            train_labels = sorted([
+                os.path.join(train_lbl_dir, f) 
+                for f in os.listdir(train_lbl_dir)
+                if f.endswith('.nii.gz')
+            ])
+        except Exception as e:
+            raise RuntimeError(f"Error reading training data: {str(e)}")
+        
+        # Verify we have data
+        if len(train_images) == 0:
+            raise ValueError(f"No training images found in {train_img_dir}")
+        if len(train_labels) == 0:
+            raise ValueError(f"No training labels found in {train_lbl_dir}")
         
         # Create data dictionaries
         data_dicts = [

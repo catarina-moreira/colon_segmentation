@@ -93,8 +93,19 @@ def train_epoch(model, train_loader, optimizer, loss_fn, device, epoch, config):
         if config['model_type'] == 'dynunet' and hasattr(model, 'do_ds') and model.do_ds:
             # Handle deep supervision outputs
             outputs = model(inputs)
-            # Use the final output for loss calculation
-            loss = loss_fn(outputs[0], labels)
+            
+            # Use all deep supervision outputs with different weights
+            if isinstance(outputs, list):
+                # Apply loss to each output with descending weights
+                ds_weights = [0.5 ** i for i in range(len(outputs))]
+                ds_weights = [w / sum(ds_weights) for w in ds_weights]  # Normalize weights
+                
+                # Calculate weighted loss for each deep supervision output
+                losses = [loss_fn(out, labels) * weight for out, weight in zip(outputs, ds_weights)]
+                loss = sum(losses)
+            else:
+                # Fallback if output is not a list
+                loss = loss_fn(outputs, labels)
         else:
             outputs = model(inputs)
             loss = loss_fn(outputs, labels)
