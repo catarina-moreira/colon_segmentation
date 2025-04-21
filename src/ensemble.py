@@ -86,13 +86,12 @@ def load_models(config):
     
     if not models:
         raise ValueError("No models could be loaded for ensemble. Please check paths and model types.")
-    
-    # Print ensemble weights
+
+    # Print ensemble weights (normalization will happen in EnsembleModel)
     print("Using ensemble weights:")
-    weight_sum = sum(config["model_weights"].get(m, 1.0) for m in models.keys())
     for model_type in models.keys():
-        normalized_weight = config["model_weights"].get(model_type, 1.0) / weight_sum
-        print(f"  {model_type}: {normalized_weight:.3f}")
+        weight = config["model_weights"].get(model_type, 1.0)
+        print(f"  {model_type}: {weight:.3f}")
     
     return models
 

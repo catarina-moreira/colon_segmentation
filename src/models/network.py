@@ -160,26 +160,6 @@ def get_device():
     """Get the available computation device."""
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def initialize_model(model_type, in_channels=1, out_channels=2, dimensions=3, device=None):
-    """
-    Initialize a model and move it to the specified device.
-    
-    Args:
-        model_type: Type of model to initialize
-        in_channels: Number of input channels
-        out_channels: Number of output channels
-        dimensions: Number of spatial dimensions
-        device: Computation device (if None, will use get_device())
-    
-    Returns:
-        Initialized model on the specified device
-    """
-    if device is None:
-        device = get_device()
-    
-    model = ModelFactory.create_model(model_type, in_channels, out_channels, dimensions)
-    return model.to(device)
-
 def load_trained_model(model_type, checkpoint_path, in_channels=1, out_channels=2, dimensions=3, device=None):
     """
     Load a trained model from a checkpoint.
