@@ -63,21 +63,47 @@ def visualize_slice(image, prediction=None, ground_truth=None, slice_idx=None, a
     if slice_idx is None:
         if ground_truth is not None:
             # Find a slice with ground truth
-            slice_indices = np.where(np.sum(ground_truth, axis=(1, 2)) > 0)[0]
+            slice_indices = []
+            if axis == 0:
+                sums = np.sum(ground_truth, axis=(1, 2))
+            elif axis == 1:
+                sums = np.sum(ground_truth, axis=(0, 2))
+            else:
+                sums = np.sum(ground_truth, axis=(0, 1))
+                
+            slice_indices = np.where(sums > 0)[0]
+            
             if len(slice_indices) > 0:
                 slice_idx = slice_indices[len(slice_indices) // 2]  # Middle slice with segmentation
             else:
-                slice_idx = image.shape[0] // 2  # Middle slice
+                slice_idx = image.shape[axis] // 2  # Default to middle slice if no segmentation found
+                
         elif prediction is not None:
             # Find a slice with prediction
-            slice_indices = np.where(np.sum(prediction, axis=(1, 2)) > 0)[0]
+            if axis == 0:
+                sums = np.sum(prediction, axis=(1, 2))
+            elif axis == 1:
+                sums = np.sum(prediction, axis=(0, 2))
+            else:
+                sums = np.sum(prediction, axis=(0, 1))
+                
+            slice_indices = np.where(sums > 0)[0]
+            
             if len(slice_indices) > 0:
                 slice_idx = slice_indices[len(slice_indices) // 2]  # Middle slice with segmentation
             else:
-                slice_idx = image.shape[0] // 2  # Middle slice
+                slice_idx = image.shape[axis] // 2  # Default to middle slice if no segmentation found
         else:
             # No segmentation available, use middle slice
-            slice_idx = image.shape[0] // 2
+            slice_idx = image.shape[axis] // 2
+    
+    # Make sure slice_idx is within valid range
+    if axis == 0:
+        slice_idx = min(max(0, slice_idx), image.shape[0] - 1)
+    elif axis == 1:
+        slice_idx = min(max(0, slice_idx), image.shape[1] - 1)
+    else:
+        slice_idx = min(max(0, slice_idx), image.shape[2] - 1)
     
     # Take slices based on the specified axis
     if axis == 0:  # z-axis (axial)
@@ -110,7 +136,7 @@ def visualize_slice(image, prediction=None, ground_truth=None, slice_idx=None, a
     
     # Plot image
     axs[0].imshow(img_slice, cmap='gray')
-    axs[0].set_title(f"{orientation} View - {titles[0]}")
+    axs[0].set_title(f"{orientation} View - {titles[0]} (Slice {slice_idx})")
     axs[0].axis('off')
     
     # Custom colormaps
@@ -120,26 +146,30 @@ def visualize_slice(image, prediction=None, ground_truth=None, slice_idx=None, a
     # Plot prediction overlay if available
     if prediction is not None and ground_truth is not None:
         axs[1].imshow(img_slice, cmap='gray')
-        pred_mask = np.ma.masked_where(pred_slice == 0, pred_slice)
-        axs[1].imshow(pred_mask, cmap=tumor_cmap, alpha=alpha)
+        if pred_slice is not None and np.any(pred_slice > 0):
+            pred_mask = np.ma.masked_where(pred_slice == 0, pred_slice)
+            axs[1].imshow(pred_mask, cmap=tumor_cmap, alpha=alpha)
         axs[1].set_title(f"{orientation} View - {titles[1]}")
         axs[1].axis('off')
         
         axs[2].imshow(img_slice, cmap='gray')
-        gt_mask = np.ma.masked_where(gt_slice == 0, gt_slice)
-        axs[2].imshow(gt_mask, cmap=gt_cmap, alpha=alpha)
+        if gt_slice is not None and np.any(gt_slice > 0):
+            gt_mask = np.ma.masked_where(gt_slice == 0, gt_slice)
+            axs[2].imshow(gt_mask, cmap=gt_cmap, alpha=alpha)
         axs[2].set_title(f"{orientation} View - {titles[2]}")
         axs[2].axis('off')
     elif prediction is not None:
         axs[1].imshow(img_slice, cmap='gray')
-        pred_mask = np.ma.masked_where(pred_slice == 0, pred_slice)
-        axs[1].imshow(pred_mask, cmap=tumor_cmap, alpha=alpha)
+        if pred_slice is not None and np.any(pred_slice > 0):
+            pred_mask = np.ma.masked_where(pred_slice == 0, pred_slice)
+            axs[1].imshow(pred_mask, cmap=tumor_cmap, alpha=alpha)
         axs[1].set_title(f"{orientation} View - {titles[1]}")
         axs[1].axis('off')
     elif ground_truth is not None:
         axs[1].imshow(img_slice, cmap='gray')
-        gt_mask = np.ma.masked_where(gt_slice == 0, gt_slice)
-        axs[1].imshow(gt_mask, cmap=gt_cmap, alpha=alpha)
+        if gt_slice is not None and np.any(gt_slice > 0):
+            gt_mask = np.ma.masked_where(gt_slice == 0, gt_slice)
+            axs[1].imshow(gt_mask, cmap=gt_cmap, alpha=alpha)
         axs[1].set_title(f"{orientation} View - {titles[1]}")
         axs[1].axis('off')
     

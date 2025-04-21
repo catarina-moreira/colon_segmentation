@@ -14,7 +14,7 @@ model_weights:
 model_dir: "./outputs/models"  # Update with your models directory
 
 # Data configuration
-data_dir: "/path/to/Task10_Colon"  # Update this path to your dataset location
+data_dir: "./data/Task10_Colon"  # Update this with the correct path to your dataset
 intensity_bounds: [-175, 250]  # HU range for CT images
 
 # Inference settings

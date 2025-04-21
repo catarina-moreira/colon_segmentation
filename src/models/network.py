@@ -241,3 +241,24 @@ def create_ensemble(model_types, checkpoint_paths, weights=None, in_channels=1, 
         raise ValueError("No valid models found for ensemble")
     
     return EnsembleModel(models, weights).to(device)
+
+def initialize_model(model_type, in_channels=1, out_channels=2, dimensions=3, device=None):
+    """
+    Initialize a model and move it to the specified device.
+    
+    Args:
+        model_type: Type of model to initialize
+        in_channels: Number of input channels
+        out_channels: Number of output channels
+        dimensions: Number of spatial dimensions
+        device: Computation device (if None, will use get_device())
+    
+    Returns:
+        Initialized model on the specified device
+    """
+    if device is None:
+        device = get_device()
+    
+    model = ModelFactory.create_model(model_type, in_channels, out_channels, dimensions)
+    return model.to(device)
+ 

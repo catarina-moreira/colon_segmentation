@@ -5,7 +5,7 @@ out_channels: 2  # Background + Foreground (colon cancer)
 dimensions: 3  # 3D segmentation
 
 # Data configuration
-data_dir: "/path/to/Task10_Colon"  # Update this path to your dataset location
+data_dir: "./data/Task10_Colon"  # Update this with the correct path to your dataset
 validation_split: 0.2  # 20% of training data used for validation
 intensity_bounds: [-175, 250]  # HU range for CT images
 
