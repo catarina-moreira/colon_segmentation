@@ -1,0 +1,47 @@
+batch_size: 2
+checkpoint_interval: 50
+data_dir: ./data/Task10_Colon
+device: cuda
+dimensions: 3
+early_stopping_patience: 50
+in_channels: 1
+intensity_bounds:
+- -175
+- 250
+loss:
+  include_background: false
+  sigmoid: false
+  softmax: true
+  to_onehot_y: true
+  use_ce: true
+max_epochs: 50
+metric:
+  include_background: false
+  reduction: mean
+model_type: unet
+num_workers: 4
+optimizer:
+  lr: 0.0003
+  type: adamw
+  weight_decay: 1.0e-05
+out_channels: 2
+output_dir: ./outputs
+overlap: 0.5
+patch_size:
+- 96
+- 96
+- 80
+plot_interval: 10
+pos_sample_ratio: 0.9
+resume: false
+scheduler:
+  factor: 0.5
+  mode: min
+  patience: 20
+  verbose: true
+seed: 42
+sw_batch_size: 4
+val_batch_size: 1
+val_interval: 5
+validation_split: 0.2
+vis_interval: 10

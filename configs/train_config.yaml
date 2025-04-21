@@ -1,5 +1,5 @@
 # Model configuration
-model_type: "dynunet"  # Options: unet, basicunet, dynunet
+model_type: "basicunet"  # Options: unet, basicunet, dynunet
 in_channels: 1
 out_channels: 2  # Background + Foreground (colon cancer)
 dimensions: 3  # 3D segmentation

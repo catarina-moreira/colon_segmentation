@@ -61,20 +61,13 @@ class BasicUNetModel(nn.Module):
         super().__init__()
         
         # Check if we should use spatial_dims instead of dimensions
-        if hasattr(monai.networks.nets.BasicUNet, "__version__") and monai.networks.nets.BasicUNet.__version__ >= "0.6.0":
-            self.net = BasicUNet(
-                spatial_dims=dimensions,
-                in_channels=in_channels,
-                out_channels=out_channels,
-                features=(32, 64, 128, 256, 512),
-            )
-        else:
-            self.net = BasicUNet(
-                dimensions=dimensions,
-                in_channels=in_channels,
-                out_channels=out_channels,
-                features=(32, 64, 128, 256, 512),
-            )
+        self.net = BasicUNet(
+            spatial_dims=dimensions,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            features=(32, 64, 128, 256, 512, 32),
+        )
+     
     
     def forward(self, x):
         return self.net(x)
@@ -86,41 +79,58 @@ class DynUNetModel(nn.Module):
     def __init__(self, in_channels=1, out_channels=2, dimensions=3):
         super().__init__()
         
-        # Define kernel sizes, strides, and upsample kernel sizes
-        # These can also be dynamically computed based on input image size
-        # as done in the original nnUNet implementation
-        kernel_size = [[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]]
-        strides = [[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
-        upsample_kernel_size = [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+        # These kernel size and strides configurations need to be compatible with
+        # each other and with the expected input size
+        kernel_size = [
+            [3, 3, 3],  # First layer
+            [3, 3, 3],  # Layer after first pooling 
+            [3, 3, 3],  # Layer after second pooling
+            [3, 3, 3],  # Layer after third pooling
+            [3, 3, 3],  # Layer after fourth pooling
+            [3, 3, 3],  # Bottom layer
+        ]
         
-        # Check if we should use spatial_dims instead of dimensions
-        if hasattr(monai.networks.nets.DynUNet, "__version__") and monai.networks.nets.DynUNet.__version__ >= "0.6.0":
-            self.net = DynUNet(
-                spatial_dims=dimensions,
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=kernel_size,
-                strides=strides,
-                upsample_kernel_size=upsample_kernel_size,
-                norm_name="instance",
-                deep_supervision=True,
-                res_block=True,
-            )
-        else:
-            self.net = DynUNet(
-                dimensions=dimensions,
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=kernel_size,
-                strides=strides,
-                upsample_kernel_size=upsample_kernel_size,
-                norm_name="instance",
-                deep_supervision=True,
-                res_block=True,
-            )
+        strides = [
+            [1, 1, 1],  # First layer stride
+            [2, 2, 2],  # First pooling stride
+            [2, 2, 2],  # Second pooling stride
+            [2, 2, 2],  # Third pooling stride
+            [2, 2, 2],  # Fourth pooling stride
+            [1, 1, 1],  # Bottom layer stride (should be 1 to maintain size)
+        ]
+        
+        # Must match the number of downsampling operations
+        upsample_kernel_size = [
+            [2, 2, 2],  # First upsampling
+            [2, 2, 2],  # Second upsampling
+            [2, 2, 2],  # Third upsampling
+            [2, 2, 2],  # Fourth upsampling
+            [2, 2, 2],  # Last upsampling
+        ]
+        
+        # Calculate the appropriate deep_supr_num
+        # It should be less than the number of upsampling layers
+        num_upsampling_layers = len(strides) - 1  # 6 - 1 = 5
+        deep_supr_num = max(1, num_upsampling_layers - 1)  # 5 - 1 = 4
+        
+        # Make sure we're using the right number of blocks for the expected input size
+        self.net = DynUNet(
+            spatial_dims=dimensions,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            strides=strides,
+            upsample_kernel_size=upsample_kernel_size,
+            norm_name="instance",
+            deep_supervision=True,
+            deep_supr_num=deep_supr_num,  # Adjusted to be valid
+            res_block=True,
+        )
     
     def forward(self, x):
         return self.net(x)
+        
+
 
 
 class EnsembleModel(nn.Module):
